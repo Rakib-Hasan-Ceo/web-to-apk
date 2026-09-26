@@ -162,11 +162,10 @@
 
     <!-- JavaScript Automation Logic -->
     <script>
-        const GITHUB_USERNAME = "Rakib-Hasan-Ceo";
-        const GITHUB_REPO = "web-to-apk";
-        
-        // GitHub টোকেন (plain string হিসেবে রাখা হলো, আগে ভুলভাবে atob() দিয়ে ডিকোড করা হচ্ছিল যার ফলে টোকেন করাপ্ট হয়ে "Bad credentials" আসছিল)
-        const GITHUB_TOKEN = "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";
+        // এখন টোকেন এখানে নেই — Cloudflare Worker সেটা সার্ভার সাইডে গোপন রাখে।
+        // নিজের Worker ডিপ্লয় করার পর এখানে সেই Worker-এর URL বসান, যেমন:
+        // "https://your-worker-name.your-subdomain.workers.dev"
+        const WORKER_URL = "https://your-worker-name.your-subdomain.workers.dev";
 
         let activeMode = 'url';
         let base64Logo = "";
@@ -235,16 +234,17 @@
             const htmlContent = document.getElementById('htmlContent').value.trim();
 
             if (activeMode === 'url' && !targetUrl) {
-                alert('অনুগ্রহ করে ওয়েবসাইটের সঠিক লিঙ্ক দিন!');
+                showInlineError('অনুগ্রহ করে ওয়েবসাইটের সঠিক লিঙ্ক দিন!');
                 return;
             }
             if (activeMode === 'html' && !htmlContent) {
-                alert('অনুগ্রহ করে HTML ফাইল দিন বা কোড লিখুন!');
+                showInlineError('অনুগ্রহ করে HTML ফাইল দিন বা কোড লিখুন!');
                 return;
             }
 
             document.getElementById('generateBtn').classList.add('hidden');
             document.getElementById('downloadBox').classList.add('hidden');
+            hideInlineError();
             document.getElementById('progressBox').classList.remove('hidden');
             document.getElementById('statusText').innerText = "⚙️ GitHub Actions এ APK বিল্ড হচ্ছে...";
 
@@ -262,11 +262,9 @@
                     }
                 };
 
-                const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/actions/workflows/build.yml/dispatches`, {
+                const res = await fetch(`${WORKER_URL}/dispatch`, {
                     method: "POST",
                     headers: {
-                        "Accept": "application/vnd.github.v3+json",
-                        "Authorization": `Bearer ${GITHUB_TOKEN}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify(payload)
@@ -274,16 +272,34 @@
 
                 if (!res.ok) {
                     const errorJson = await res.json().catch(() => ({}));
-                    throw new Error(errorJson.message || "টোকেন পারমিশন চেক করুন");
+                    throw new Error(errorJson.message || `সার্ভার এরর (status ${res.status})`);
                 }
 
                 pollForRelease(appName);
 
             } catch (err) {
-                alert("বিল্ড শুরু করতে সমস্যা হয়েছে: " + err.message);
+                console.error("Dispatch error:", err);
+                showInlineError("বিল্ড শুরু করতে সমস্যা হয়েছে: " + err.message);
                 document.getElementById('generateBtn').classList.remove('hidden');
                 document.getElementById('progressBox').classList.add('hidden');
             }
+        }
+
+        function showInlineError(message) {
+            let box = document.getElementById('errorBox');
+            if (!box) {
+                box = document.createElement('div');
+                box.id = 'errorBox';
+                box.className = 'mt-6 bg-red-500/10 border border-red-500/30 rounded-2xl p-4 text-center text-red-400 text-sm font-semibold';
+                document.getElementById('actionSection').appendChild(box);
+            }
+            box.innerText = "⚠️ " + message;
+            box.classList.remove('hidden');
+        }
+
+        function hideInlineError() {
+            const box = document.getElementById('errorBox');
+            if (box) box.classList.add('hidden');
         }
 
         async function pollForRelease(appName) {
@@ -295,12 +311,11 @@
                 document.getElementById('statusText').innerText = `⚙️ APK তৈরি হচ্ছে... (${attempts * 6}s)`;
 
                 try {
-                    const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/releases`, {
-                        headers: { "Authorization": `Bearer ${GITHUB_TOKEN}` }
-                    });
+                    const res = await fetch(`${WORKER_URL}/releases`);
+                    if (!res.ok) throw new Error(`status ${res.status}`);
                     const releases = await res.json();
-                    
-                    if (releases.length > 0 && releases[0].assets.length > 0) {
+
+                    if (Array.isArray(releases) && releases.length > 0 && releases[0].assets.length > 0) {
                         const apkAsset = releases[0].assets.find(a => a.name.endsWith('.apk'));
                         if (apkAsset) {
                             clearInterval(interval);
@@ -310,11 +325,13 @@
                             document.getElementById('generateBtn').classList.remove('hidden');
                         }
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error("Poll error:", e);
+                }
 
                 if (attempts >= maxAttempts) {
                     clearInterval(interval);
-                    alert("বিল্ড সম্পন্ন হয়েছে, দয়া করে রিলিজ পেজটি চেক করুন।");
+                    showInlineError("বিল্ড সম্পন্ন হয়েছে, দয়া করে রিলিজ পেজটি চেক করুন।");
                     document.getElementById('generateBtn').classList.remove('hidden');
                     document.getElementById('progressBox').classList.add('hidden');
                 }
