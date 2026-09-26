@@ -1,0 +1,192 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'App Name'
+        required: true
+        default: 'MyApp'
+      package_name:
+        description: 'Package Name'
+        required: true
+        default: 'com.alorhawa.app'
+      version_name:
+        description: 'Version Name'
+        required: true
+        default: '1.0.0'
+      target_url:
+        description: 'Target Website URL'
+        required: false
+        default: 'https://example.com'
+      is_html:
+        description: 'Is Offline HTML (true/false)'
+        required: false
+        default: 'false'
+      html_content:
+        description: 'HTML Content'
+        required: false
+        default: ''
+      icon_base64:
+        description: 'Logo in Base64'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Create Android Project
+        run: |
+          mkdir -p app/src/main/java/com/alorhawa/webviewapp
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+
+          # root build.gradle
+          cat << 'EOF' > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.1.4' }
+          }
+          allprojects { repositories { google(); mavenCentral() } }
+          EOF
+
+          # settings.gradle
+          echo "include ':app'" > settings.gradle
+
+          # gradle.properties
+          cat << 'EOF' > gradle.properties
+          org.gradle.jvmargs=-Xmx2048m
+          android.useAndroidX=false
+          android.enableJetifier=false
+          EOF
+
+          # app/build.gradle
+          cat << 'EOF' > app/build.gradle
+          apply plugin: 'com.android.application'
+          android {
+              namespace "com.alorhawa.webviewapp"
+              compileSdk 34
+              defaultConfig {
+                  applicationId "${{ github.event.inputs.package_name }}"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "${{ github.event.inputs.version_name }}"
+              }
+              buildTypes { debug { minifyEnabled false } }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          dependencies {}
+          EOF
+
+          # AndroidManifest.xml
+          cat << 'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <application
+                  android:allowBackup="true"
+                  android:label="${{ github.event.inputs.app_name }}"
+                  android:icon="@mipmap/ic_launcher"
+                  android:theme="@android:style/Theme.NoTitleBar"
+                  android:usesCleartextTraffic="true">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          # HTML / URL Mode
+          TARGET_URL="${{ github.event.inputs.target_url }}"
+          if [ "${{ github.event.inputs.is_html }}" == "true" ]; then
+              TARGET_URL="file:///android_asset/index.html"
+              mkdir -p app/src/main/assets
+              echo "${{ github.event.inputs.html_content }}" > app/src/main/assets/index.html
+          fi
+
+          # MainActivity.java
+          cat << EOF > app/src/main/java/com/alorhawa/webviewapp/MainActivity.java
+          package com.alorhawa.webviewapp;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.view.KeyEvent;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          public class MainActivity extends Activity {
+              private WebView webView;
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  webView = new WebView(this);
+                  setContentView(webView);
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setAllowFileAccess(true);
+                  webView.setWebViewClient(new WebViewClient());
+                  webView.loadUrl("$TARGET_URL");
+              }
+              @Override
+              public boolean onKeyDown(int keyCode, KeyEvent event) {
+                  if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
+                      webView.goBack();
+                      return true;
+                  }
+                  return super.onKeyDown(keyCode, event);
+              }
+          }
+          EOF
+
+          # Logo processing
+          if [ -n "${{ github.event.inputs.icon_base64 }}" ]; then
+              echo "${{ github.event.inputs.icon_base64 }}" | base64 -d > /tmp/logo.png
+              python3 -c "
+          from PIL import Image
+          img = Image.open('/tmp/logo.png').convert('RGBA')
+          for s, f in [(72, 'mipmap-hdpi'), (96, 'mipmap-xhdpi'), (144, 'mipmap-xxhdpi')]:
+              img.resize((s, s)).save(f'app/src/main/res/{f}/ic_launcher.png')
+          "
+          else
+              python3 -c "
+          from PIL import Image, ImageDraw
+          for s, f in [(72, 'mipmap-hdpi'), (96, 'mipmap-xhdpi'), (144, 'mipmap-xxhdpi')]:
+              img = Image.new('RGBA', (s, s), color=(33, 150, 243, 255))
+              ImageDraw.Draw(img).ellipse([(s*0.2, s*0.2), (s*0.8, s*0.8)], fill=(255, 255, 255, 255))
+              img.save(f'app/src/main/res/{f}/ic_launcher.png')
+          "
+          fi
+
+      - name: Build APK with Gradle
+        run: gradle assembleDebug
+
+      - name: Upload Release APK
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "v-${{ github.run_id }}"
+          name: "APK - ${{ github.event.inputs.app_name }}"
+          files: app/build/outputs/apk/debug/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
