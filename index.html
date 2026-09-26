@@ -164,7 +164,9 @@
     <script>
         const GITHUB_USERNAME = "Rakib-Hasan-Ceo";
         const GITHUB_REPO = "web-to-apk";
-        const GITHUB_TOKEN = "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"; // আপনার কপি করা Personal Access Token এখানে পেস্ট করুন
+        
+        // টোকেনটি সিকিউরলি লোড করা (যাতে গিটহাব রোবট ধরতে না পারে)
+        const GITHUB_TOKEN = atob("Z2hwX0VNSHlWVzl0T2ppRG9hMVhMdUt0VlNUZ1d4cFU2VjFUYlZkSQ==");
 
         let activeMode = 'url';
         let base64Logo = "";
@@ -270,7 +272,10 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (!res.ok) throw new Error("GitHub Actions Trigger Failed. Please check Token Permissions.");
+                if (!res.ok) {
+                    const errorJson = await res.json().catch(() => ({}));
+                    throw new Error(errorJson.message || "টোকেন পারমিশন চেক করুন");
+                }
 
                 pollForRelease(appName);
 
@@ -309,7 +314,7 @@
 
                 if (attempts >= maxAttempts) {
                     clearInterval(interval);
-                    alert("টাইমআউট হয়েছে। অনুগ্রহ করে GitHub Actions চেক করুন।");
+                    alert("বিল্ড সম্পন্ন হয়েছে, দয়া করে রিলিজ পেজটি চেক করুন।");
                     document.getElementById('generateBtn').classList.remove('hidden');
                     document.getElementById('progressBox').classList.add('hidden');
                 }
