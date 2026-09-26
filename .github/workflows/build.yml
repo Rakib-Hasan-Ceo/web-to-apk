@@ -23,14 +23,6 @@ on:
         description: 'Is Offline HTML (true/false)'
         required: false
         default: 'false'
-      html_content:
-        description: 'HTML Content'
-        required: false
-        default: ''
-      icon_base64:
-        description: 'Logo in Base64'
-        required: false
-        default: ''
 
 jobs:
   build:
@@ -123,7 +115,7 @@ jobs:
           if [ "${{ github.event.inputs.is_html }}" == "true" ]; then
               TARGET_URL="file:///android_asset/index.html"
               mkdir -p app/src/main/assets
-              echo "${{ github.event.inputs.html_content }}" > app/src/main/assets/index.html
+              cp build-input/index.html app/src/main/assets/index.html
           fi
 
           # MainActivity.java
@@ -161,8 +153,8 @@ jobs:
           EOF
 
           # Logo processing
-          if [ -n "${{ github.event.inputs.icon_base64 }}" ]; then
-              echo "${{ github.event.inputs.icon_base64 }}" | base64 -d > /tmp/logo.png
+          if [ -f "build-input/icon.png" ]; then
+              cp build-input/icon.png /tmp/logo.png
               python3 -c "
           from PIL import Image
           img = Image.open('/tmp/logo.png').convert('RGBA')
