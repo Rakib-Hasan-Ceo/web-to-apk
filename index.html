@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web & HTML to APK Generator</title>
+    <!-- Tailwind CSS & Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Hind Siliguri', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Navbar -->
+    <nav class="bg-slate-800/80 backdrop-blur border-b border-slate-700 py-4 px-6 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-green-500 to-emerald-400 p-2 rounded-xl text-white shadow-lg">
+                    <i class="fa-solid fa-cube text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-green-400 to-teal-300 bg-clip-text text-transparent">Alorhawa APK Maker</h1>
+                    <p class="text-xs text-slate-400">Web & HTML to Android App Generator</p>
+                </div>
+            </div>
+            <div class="flex space-x-3">
+                <a href="https://t.me/Alorhawa" target="_blank" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-semibold transition flex items-center gap-2 shadow">
+                    <i class="fa-brands fa-telegram"></i> চ্যানেল
+                </a>
+                <a href="https://t.me/EasyLiveChatBot" target="_blank" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold transition flex items-center gap-2">
+                    <i class="fa-solid fa-headset"></i> সাপোর্ট
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto w-full px-4 py-8">
+        
+        <!-- Tab Buttons -->
+        <div class="flex grid grid-cols-2 md:grid-cols-4 gap-2 bg-slate-800 p-1.5 rounded-2xl border border-slate-700 mb-8 shadow-md">
+            <button onclick="switchTab('urlTab')" id="tabBtnUrl" class="tab-btn py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 bg-green-500 text-slate-950 shadow">
+                <i class="fa-solid fa-globe"></i> Website to APK
+            </button>
+            <button onclick="switchTab('htmlTab')" id="tabBtnHtml" class="tab-btn py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-code"></i> HTML to APK
+            </button>
+            <button onclick="switchTab('rulesTab')" id="tabBtnRules" class="tab-btn py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-book-open"></i> ব্যবহারের নিয়ম
+            </button>
+            <button onclick="switchTab('supportTab')" id="tabBtnSupport" class="tab-btn py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-comments"></i> সাপোর্ট ও যোগাযোগ
+            </button>
+        </div>
+
+        <!-- Form Box -->
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 md:p-8 shadow-2xl">
+            
+            <!-- 1. URL / HTML Content Section -->
+            <div id="urlSection">
+                <label class="block text-sm font-semibold text-slate-300 mb-2">🌐 ওয়েবসাইটের লিঙ্ক (URL):</label>
+                <div class="relative">
+                    <i class="fa-solid fa-link absolute left-4 top-3.5 text-slate-500"></i>
+                    <input type="url" id="targetUrl" placeholder="https://example.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-green-500 transition text-sm">
+                </div>
+            </div>
+
+            <div id="htmlSection" class="hidden">
+                <label class="block text-sm font-semibold text-slate-300 mb-2">📁 HTML ফাইল আপলোড করুন অথবা কোড পেস্ট করুন:</label>
+                <input type="file" id="htmlFileInput" accept=".html,.htm" onchange="loadHtmlFile(event)" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-slate-200 hover:file:bg-slate-600 mb-3 cursor-pointer">
+                <textarea id="htmlContent" rows="4" placeholder="<!DOCTYPE html><html>...</html>" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 focus:outline-none focus:border-green-500 transition text-xs font-mono"></textarea>
+            </div>
+
+            <!-- Common Fields (App Details) -->
+            <div id="appDetailsSection" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-300 mb-2">📱 অ্যাপের নাম (App Name):</label>
+                    <input type="text" id="appName" placeholder="My Awesome App" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 focus:outline-none focus:border-green-500 transition text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-300 mb-2">📦 প্যাকেজ নেম (Package Name):</label>
+                    <input type="text" id="packageName" placeholder="com.alorhawa.myapp" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 focus:outline-none focus:border-green-500 transition text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-300 mb-2">🔢 ভার্সন (Version Name):</label>
+                    <input type="text" id="appVersion" value="1.0.0" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 focus:outline-none focus:border-green-500 transition text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-300 mb-2">🖼️ অ্যাপ লোগো/আইকন (ঐচ্ছিক):</label>
+                    <div class="flex items-center gap-3">
+                        <input type="file" id="appLogoInput" accept="image/*" onchange="previewLogo(event)" class="w-full text-xs text-slate-400 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-slate-200 hover:file:bg-slate-600 cursor-pointer">
+                        <img id="logoPreview" src="https://via.placeholder.com/48/334155/ffffff?text=Icon" class="w-12 h-12 rounded-xl object-cover border border-slate-700 shadow">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules Tab -->
+            <div id="rulesSection" class="hidden text-slate-300 space-y-3">
+                <h3 class="text-lg font-bold text-green-400 border-b border-slate-700 pb-2">📖 ব্যবহারের সহজ নিয়মাবলী:</h3>
+                <p>১. <b>Website to APK:</b> যেকোনো লাইভ সাইটের URL দিলে সেটা থেকে অনলাইন অ্যাপ তৈরি হবে।</p>
+                <p>২. <b>HTML to APK:</b> আপনার HTML/CSS কোড আপলোড করলে সেটা ১০০% ইন্টারনেট ছাড়াই <b>অফলাইন অ্যাপ</b> হিসেবে চলবে।</p>
+                <p>৩. <b>প্যাকেজ নাম:</b> সবসময় ইংরেজি ছোট হাতের অক্ষর ও ডট দিয়ে লিখবেন (যেমন: <code>com.mybrand.app</code>)।</p>
+                <p>৪. <b>লোগো:</b> যেকোনো স্কয়ার ছবি দিলে চমৎকার দেখাবে।</p>
+            </div>
+
+            <!-- Support Tab -->
+            <div id="supportSection" class="hidden text-center py-6 space-y-4">
+                <i class="fa-solid fa-headset text-5xl text-teal-400"></i>
+                <h3 class="text-xl font-bold">যেকোনো সাহায্য বা তথ্যের জন্য যোগাযোগ করুন</h3>
+                <p class="text-slate-400 max-w-md mx-auto text-sm">আমাদের অ্যাডমিন টিম এবং অফিসিয়াল চ্যানেলে যুক্ত হয়ে যেকোনো সমস্যার তাত্ক্ষণিক সমাধান পেতে পারেন।</p>
+                <div class="flex justify-center gap-4 pt-2">
+                    <a href="https://t.me/Alorhawa" target="_blank" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-semibold transition flex items-center gap-2">
+                        <i class="fa-brands fa-telegram"></i> Telegram Channel
+                    </a>
+                    <a href="https://t.me/EasyLiveChatBot" target="_blank" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold transition flex items-center gap-2">
+                        <i class="fa-solid fa-robot"></i> Support Live Bot
+                    </a>
+                </div>
+            </div>
+
+            <!-- Action Buttons & Progress -->
+            <div id="actionSection" class="mt-8">
+                <button onclick="startBuildProcess()" id="generateBtn" class="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-slate-950 font-bold py-4 rounded-2xl shadow-lg transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-lg">
+                    <i class="fa-solid fa-bolt"></i> Generate Android APK
+                </button>
+
+                <!-- Loading State -->
+                <div id="progressBox" class="hidden mt-6 bg-slate-900 border border-slate-700 rounded-2xl p-6 text-center space-y-4">
+                    <div class="flex justify-center">
+                        <div class="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <div>
+                        <h4 id="statusText" class="font-bold text-lg text-slate-200">🚀 অ্যাপ তৈরি শুরু হচ্ছে...</h4>
+                        <p class="text-xs text-slate-400 mt-1">দয়া করে ৩০-৪০ সেকেন্ড অপেক্ষা করুন</p>
+                    </div>
+                </div>
+
+                <!-- Download Box -->
+                <div id="downloadBox" class="hidden mt-6 bg-green-500/10 border border-green-500/30 rounded-2xl p-6 text-center space-y-4">
+                    <i class="fa-solid fa-circle-check text-4xl text-green-400"></i>
+                    <div>
+                        <h4 class="font-bold text-xl text-green-400">🎉 আপনার অ্যাপ প্রস্তুত!</h4>
+                        <p class="text-xs text-slate-300 mt-1">নিচের বাটনে চাপ দিয়ে সরাসরি APK ডাউনলোড করে নিন।</p>
+                    </div>
+                    <a id="downloadLink" href="#" target="_blank" class="inline-flex items-center gap-2 px-8 py-3.5 bg-green-500 hover:bg-green-400 text-slate-950 font-bold rounded-xl shadow-lg transition text-base">
+                        <i class="fa-solid fa-download"></i> Download APK Now
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+        <p>© 2026 Alorhawa APK Maker. All rights reserved. Powered by GitHub & Cloudflare.</p>
+    </footer>
+
+    <!-- JavaScript Automation Logic -->
+    <script>
+        const GITHUB_USERNAME = "Rakib-Hasan-Ceo";
+        const GITHUB_REPO = "web-to-apk";
+        const GITHUB_TOKEN = "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"; // আপনার কপি করা Personal Access Token এখানে পেস্ট করুন
+
+        let activeMode = 'url';
+        let base64Logo = "";
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 text-slate-400 hover:text-white';
+            });
+
+            document.getElementById('urlSection').classList.add('hidden');
+            document.getElementById('htmlSection').classList.add('hidden');
+            document.getElementById('rulesSection').classList.add('hidden');
+            document.getElementById('supportSection').classList.add('hidden');
+            document.getElementById('appDetailsSection').classList.add('hidden');
+            document.getElementById('actionSection').classList.add('hidden');
+
+            if (tab === 'urlTab') {
+                activeMode = 'url';
+                document.getElementById('tabBtnUrl').className = 'tab-btn py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 bg-green-500 text-slate-950 shadow';
+                document.getElementById('urlSection').classList.remove('hidden');
+                document.getElementById('appDetailsSection').classList.remove('hidden');
+                document.getElementById('actionSection').classList.remove('hidden');
+            } else if (tab === 'htmlTab') {
+                activeMode = 'html';
+                document.getElementById('tabBtnHtml').className = 'tab-btn py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 bg-green-500 text-slate-950 shadow';
+                document.getElementById('htmlSection').classList.remove('hidden');
+                document.getElementById('appDetailsSection').classList.remove('hidden');
+                document.getElementById('actionSection').classList.remove('hidden');
+            } else if (tab === 'rulesTab') {
+                document.getElementById('tabBtnRules').className = 'tab-btn py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 bg-green-500 text-slate-950 shadow';
+                document.getElementById('rulesSection').classList.remove('hidden');
+            } else if (tab === 'supportTab') {
+                document.getElementById('tabBtnSupport').className = 'tab-btn py-3 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 bg-green-500 text-slate-950 shadow';
+                document.getElementById('supportSection').classList.remove('hidden');
+            }
+        }
+
+        function previewLogo(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('logoPreview').src = e.target.result;
+                    base64Logo = e.target.result.split(',')[1];
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function loadHtmlFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('htmlContent').value = e.target.result;
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        async function startBuildProcess() {
+            const appName = document.getElementById('appName').value.trim() || 'MyApp';
+            const packageName = document.getElementById('packageName').value.trim() || 'com.alorhawa.app';
+            const appVersion = document.getElementById('appVersion').value.trim() || '1.0.0';
+            const targetUrl = document.getElementById('targetUrl').value.trim();
+            const htmlContent = document.getElementById('htmlContent').value.trim();
+
+            if (activeMode === 'url' && !targetUrl) {
+                alert('অনুগ্রহ করে ওয়েবসাইটের সঠিক লিঙ্ক দিন!');
+                return;
+            }
+            if (activeMode === 'html' && !htmlContent) {
+                alert('অনুগ্রহ করে HTML ফাইল দিন বা কোড লিখুন!');
+                return;
+            }
+
+            document.getElementById('generateBtn').classList.add('hidden');
+            document.getElementById('downloadBox').classList.add('hidden');
+            document.getElementById('progressBox').classList.remove('hidden');
+            document.getElementById('statusText').innerText = "⚙️ GitHub Actions এ APK বিল্ড হচ্ছে...";
+
+            try {
+                const payload = {
+                    ref: "main",
+                    inputs: {
+                        app_name: appName,
+                        package_name: packageName,
+                        version_name: appVersion,
+                        target_url: targetUrl,
+                        is_html: activeMode === 'html' ? "true" : "false",
+                        html_content: htmlContent,
+                        icon_base64: base64Logo
+                    }
+                };
+
+                const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/actions/workflows/build.yml/dispatches`, {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/vnd.github.v3+json",
+                        "Authorization": `Bearer ${GITHUB_TOKEN}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) throw new Error("GitHub Actions Trigger Failed. Please check Token Permissions.");
+
+                pollForRelease(appName);
+
+            } catch (err) {
+                alert("বিল্ড শুরু করতে সমস্যা হয়েছে: " + err.message);
+                document.getElementById('generateBtn').classList.remove('hidden');
+                document.getElementById('progressBox').classList.add('hidden');
+            }
+        }
+
+        async function pollForRelease(appName) {
+            let attempts = 0;
+            const maxAttempts = 35;
+
+            const interval = setInterval(async () => {
+                attempts++;
+                document.getElementById('statusText').innerText = `⚙️ APK তৈরি হচ্ছে... (${attempts * 6}s)`;
+
+                try {
+                    const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/releases`, {
+                        headers: { "Authorization": `Bearer ${GITHUB_TOKEN}` }
+                    });
+                    const releases = await res.json();
+                    
+                    if (releases.length > 0 && releases[0].assets.length > 0) {
+                        const apkAsset = releases[0].assets.find(a => a.name.endsWith('.apk'));
+                        if (apkAsset) {
+                            clearInterval(interval);
+                            document.getElementById('progressBox').classList.add('hidden');
+                            document.getElementById('downloadBox').classList.remove('hidden');
+                            document.getElementById('downloadLink').href = apkAsset.browser_download_url;
+                            document.getElementById('generateBtn').classList.remove('hidden');
+                        }
+                    }
+                } catch (e) {}
+
+                if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    alert("টাইমআউট হয়েছে। অনুগ্রহ করে GitHub Actions চেক করুন।");
+                    document.getElementById('generateBtn').classList.remove('hidden');
+                    document.getElementById('progressBox').classList.add('hidden');
+                }
+            }, 6000);
+        }
+    </script>
+</body>
+</html>
